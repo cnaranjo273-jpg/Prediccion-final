@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Copa del Mundo 2026 - Resultados</title>
+    <title>Predicción Final - Copa del Mundo 2026</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -34,15 +34,9 @@
         h1 {
             text-align: center;
             color: #f0a500;
-            margin-bottom: 10px;
+            margin-bottom: 25px;
             font-size: 2rem;
             letter-spacing: 1px;
-        }
-        h2 {
-            text-align: center;
-            color: #d4d4d4;
-            margin-bottom: 25px;
-            font-weight: 400;
             border-bottom: 2px solid #f0a500;
             padding-bottom: 10px;
         }
@@ -142,10 +136,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>COPA DEL MUNDO 2026</h1>
-        <h2>Equipos clasificados a Dieciseisavos de Final</h2>
-        
-        <!-- Lista de los 32 equipos -->
+        <h1>Predicción Final</h1>
+
+        <!-- Lista de los 32 equipos proporcionados -->
         <ul id="lista-equipos" class="equipos-grid">
             <!-- Se llena dinámicamente con JavaScript -->
         </ul>
@@ -154,11 +147,11 @@
         <div class="seleccion">
             <h3>Establecer los cuatro primeros lugares</h3>
             <div class="form-group">
-                <label for="campeon">1er lugar (Campeon):</label>
+                <label for="campeon">1er lugar (Campeón):</label>
                 <select id="campeon"></select>
             </div>
             <div class="form-group">
-                <label for="subcampeon">2do lugar (Subcampeon):</label>
+                <label for="subcampeon">2do lugar (Subcampeón):</label>
                 <select id="subcampeon"></select>
             </div>
             <div class="form-group">
@@ -190,14 +183,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- LISTA DE LOS 32 EQUIPOS (proyección realista para 2026) ---
+        // --- LISTA EXACTA DE LOS 32 PAÍSES PROPORCIONADOS ---
         const equipos = [
-            "Argentina", "Brasil", "Uruguay", "Paraguay", "Ecuador", "Colombia", "Chile", "Perú",
-            "Estados Unidos", "México", "Canadá", "Costa Rica",
-            "Francia", "España", "Inglaterra", "Alemania", "Portugal", "Italia", "Países Bajos", "Bélgica",
-            "Croacia", "Suiza", "Dinamarca", "Serbia",
-            "Japón", "Corea del Sur", "Australia", "Arabia Saudita", "Irán",
-            "Marruecos", "Senegal", "Nigeria", "Ghana"
+            "Alemania", "Paraguay", "Francia", "Suecia", "Sudáfrica", "Canadá",
+            "Países Bajos", "Marruecos", "Portugal", "Croacia", "España", "Austria",
+            "Estados Unidos", "Bosnia y Herzegovina", "Bélgica", "Senegal",
+            "Brasil", "Japón", "Costa de Marfil", "Noruega", "México", "Ecuador",
+            "Inglaterra", "República Democrática del Congo", "Argentina", "Cabo Verde",
+            "Australia", "Egipto", "Suiza", "Argelia", "Colombia", "Ghana"
         ];
 
         // Referencias a elementos del DOM
@@ -223,6 +216,7 @@
             const valorActual = selectElement.value;
             selectElement.innerHTML = '<option value="">-- Seleccionar --</option>';
             equipos.forEach(equipo => {
+                // Si el equipo está excluido (ya seleccionado en otro select) y no es el valor actual, no lo mostramos
                 if (!equiposExcluir.includes(equipo) || equipo === valorActual) {
                     const option = document.createElement('option');
                     option.value = equipo;
@@ -241,7 +235,6 @@
             const tercero = selectTercero.value;
             const cuarto = selectCuarto.value;
 
-            // Excluir equipos ya seleccionados en otros select, excepto el propio
             llenarSelect(selectCampeon, [subcampeon, tercero, cuarto].filter(Boolean));
             llenarSelect(selectSubcampeon, [campeon, tercero, cuarto].filter(Boolean));
             llenarSelect(selectTercero, [campeon, subcampeon, cuarto].filter(Boolean));
@@ -261,16 +254,13 @@
             const tercero = selectTercero.value;
             const cuarto = selectCuarto.value;
 
-            // Validar que los 4 estén seleccionados
             if (!campeon || !subcampeon || !tercero || !cuarto) {
                 mostrarMensaje('Debe seleccionar los cuatro lugares.', 'error');
                 return;
             }
 
-            // Validar que no haya duplicados
             const seleccionados = [campeon, subcampeon, tercero, cuarto];
-            const unicos = new Set(seleccionados);
-            if (unicos.size !== 4) {
+            if (new Set(seleccionados).size !== 4) {
                 mostrarMensaje('Los equipos seleccionados deben ser diferentes entre sí.', 'error');
                 return;
             }
@@ -279,13 +269,12 @@
             btnGuardar.textContent = 'Guardando...';
 
             try {
-                // Guardar en colección "resultados", documento "final2026"
                 await db.collection('resultados').doc('final2026').set({
                     campeon: campeon,
                     subcampeon: subcampeon,
                     tercero: tercero,
                     cuarto: cuarto,
-                    equipos: equipos,               // lista completa de los 32
+                    equipos: equipos,
                     fecha: new Date().toISOString()
                 });
                 mostrarMensaje('Resultados guardados correctamente en Firebase.', 'exito');
@@ -301,7 +290,6 @@
         function mostrarMensaje(texto, tipo) {
             mensajeDiv.textContent = texto;
             mensajeDiv.className = 'mensaje ' + tipo;
-            // Ocultar después de 5 segundos
             setTimeout(() => {
                 mensajeDiv.textContent = '';
                 mensajeDiv.className = 'mensaje';
@@ -310,7 +298,6 @@
 
         // Inicialización
         llenarListaEquipos();
-        // Llenar los selects inicialmente sin exclusiones
         llenarSelect(selectCampeon);
         llenarSelect(selectSubcampeon);
         llenarSelect(selectTercero);
