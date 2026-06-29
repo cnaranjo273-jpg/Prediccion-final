@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copa del Mundo 2026 - Resultados</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #16213e;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #f0a500;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+        h2 {
+            text-align: center;
+            color: #d4d4d4;
+            margin-bottom: 25px;
+            font-weight: 400;
+            border-bottom: 2px solid #f0a500;
+            padding-bottom: 10px;
+        }
+        .equipos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-bottom: 35px;
+            background-color: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            list-style: none;
+        }
+        .equipos-grid li {
+            background-color: #1a1a2e;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: center;
+            border-left: 4px solid #f0a500;
+        }
+        .seleccion {
+            background-color: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .seleccion h3 {
+            margin-bottom: 15px;
+            color: #f0a500;
+            font-size: 1.2rem;
+        }
+        .form-group {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-group label {
+            width: 140px;
+            font-weight: bold;
+            color: #c0c0c0;
+        }
+        .form-group select {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #f0a500;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .form-group select:focus {
+            border-color: #e94560;
+            box-shadow: 0 0 8px rgba(233,69,96,0.4);
+        }
+        button {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+        button:hover {
+            background-color: #c23152;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .mensaje {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        .exito {
+            background-color: #1e5128;
+            color: #a7f0a7;
+        }
+        .error {
+            background-color: #5c1a1a;
+            color: #f5a3a3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>COPA DEL MUNDO 2026</h1>
+        <h2>Equipos clasificados a Dieciseisavos de Final</h2>
+        
+        <!-- Lista de los 32 equipos -->
+        <ul id="lista-equipos" class="equipos-grid">
+            <!-- Se llena dinámicamente con JavaScript -->
+        </ul>
+
+        <!-- Selección de los cuatro primeros lugares -->
+        <div class="seleccion">
+            <h3>Establecer los cuatro primeros lugares</h3>
+            <div class="form-group">
+                <label for="campeon">1er lugar (Campeon):</label>
+                <select id="campeon"></select>
+            </div>
+            <div class="form-group">
+                <label for="subcampeon">2do lugar (Subcampeon):</label>
+                <select id="subcampeon"></select>
+            </div>
+            <div class="form-group">
+                <label for="tercero">3er lugar:</label>
+                <select id="tercero"></select>
+            </div>
+            <div class="form-group">
+                <label for="cuarto">4to lugar:</label>
+                <select id="cuarto"></select>
+            </div>
+            <button id="guardar-btn">Guardar resultados en Firebase</button>
+            <div id="mensaje" class="mensaje"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCX8aNC7Q6g6fU6lu-hHJx90RICllmTraM",
+            authDomain: "prueba-30dd9.firebaseapp.com",
+            projectId: "prueba-30dd9",
+            storageBucket: "prueba-30dd9.firebasestorage.app",
+            messagingSenderId: "447206662661",
+            appId: "1:447206662661:web:a689b6a488af8cfb2c326c",
+            measurementId: "G-2L7YYNQ8E2"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- LISTA DE LOS 32 EQUIPOS (proyección realista para 2026) ---
+        const equipos = [
+            "Argentina", "Brasil", "Uruguay", "Paraguay", "Ecuador", "Colombia", "Chile", "Perú",
+            "Estados Unidos", "México", "Canadá", "Costa Rica",
+            "Francia", "España", "Inglaterra", "Alemania", "Portugal", "Italia", "Países Bajos", "Bélgica",
+            "Croacia", "Suiza", "Dinamarca", "Serbia",
+            "Japón", "Corea del Sur", "Australia", "Arabia Saudita", "Irán",
+            "Marruecos", "Senegal", "Nigeria", "Ghana"
+        ];
+
+        // Referencias a elementos del DOM
+        const listaEquipos = document.getElementById('lista-equipos');
+        const selectCampeon = document.getElementById('campeon');
+        const selectSubcampeon = document.getElementById('subcampeon');
+        const selectTercero = document.getElementById('tercero');
+        const selectCuarto = document.getElementById('cuarto');
+        const btnGuardar = document.getElementById('guardar-btn');
+        const mensajeDiv = document.getElementById('mensaje');
+
+        // --- FUNCIONES ---
+        function llenarListaEquipos() {
+            listaEquipos.innerHTML = '';
+            equipos.forEach(equipo => {
+                const li = document.createElement('li');
+                li.textContent = equipo;
+                listaEquipos.appendChild(li);
+            });
+        }
+
+        function llenarSelect(selectElement, equiposExcluir = []) {
+            const valorActual = selectElement.value;
+            selectElement.innerHTML = '<option value="">-- Seleccionar --</option>';
+            equipos.forEach(equipo => {
+                if (!equiposExcluir.includes(equipo) || equipo === valorActual) {
+                    const option = document.createElement('option');
+                    option.value = equipo;
+                    option.textContent = equipo;
+                    if (equipo === valorActual) {
+                        option.selected = true;
+                    }
+                    selectElement.appendChild(option);
+                }
+            });
+        }
+
+        function actualizarTodosLosSelects() {
+            const campeon = selectCampeon.value;
+            const subcampeon = selectSubcampeon.value;
+            const tercero = selectTercero.value;
+            const cuarto = selectCuarto.value;
+
+            // Excluir equipos ya seleccionados en otros select, excepto el propio
+            llenarSelect(selectCampeon, [subcampeon, tercero, cuarto].filter(Boolean));
+            llenarSelect(selectSubcampeon, [campeon, tercero, cuarto].filter(Boolean));
+            llenarSelect(selectTercero, [campeon, subcampeon, cuarto].filter(Boolean));
+            llenarSelect(selectCuarto, [campeon, subcampeon, tercero].filter(Boolean));
+        }
+
+        // Eventos change en los selects
+        selectCampeon.addEventListener('change', actualizarTodosLosSelects);
+        selectSubcampeon.addEventListener('change', actualizarTodosLosSelects);
+        selectTercero.addEventListener('change', actualizarTodosLosSelects);
+        selectCuarto.addEventListener('change', actualizarTodosLosSelects);
+
+        // Guardar en Firestore
+        btnGuardar.addEventListener('click', async () => {
+            const campeon = selectCampeon.value;
+            const subcampeon = selectSubcampeon.value;
+            const tercero = selectTercero.value;
+            const cuarto = selectCuarto.value;
+
+            // Validar que los 4 estén seleccionados
+            if (!campeon || !subcampeon || !tercero || !cuarto) {
+                mostrarMensaje('Debe seleccionar los cuatro lugares.', 'error');
+                return;
+            }
+
+            // Validar que no haya duplicados
+            const seleccionados = [campeon, subcampeon, tercero, cuarto];
+            const unicos = new Set(seleccionados);
+            if (unicos.size !== 4) {
+                mostrarMensaje('Los equipos seleccionados deben ser diferentes entre sí.', 'error');
+                return;
+            }
+
+            btnGuardar.disabled = true;
+            btnGuardar.textContent = 'Guardando...';
+
+            try {
+                // Guardar en colección "resultados", documento "final2026"
+                await db.collection('resultados').doc('final2026').set({
+                    campeon: campeon,
+                    subcampeon: subcampeon,
+                    tercero: tercero,
+                    cuarto: cuarto,
+                    equipos: equipos,               // lista completa de los 32
+                    fecha: new Date().toISOString()
+                });
+                mostrarMensaje('Resultados guardados correctamente en Firebase.', 'exito');
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                mostrarMensaje('Error al guardar: ' + error.message, 'error');
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.textContent = 'Guardar resultados en Firebase';
+            }
+        });
+
+        function mostrarMensaje(texto, tipo) {
+            mensajeDiv.textContent = texto;
+            mensajeDiv.className = 'mensaje ' + tipo;
+            // Ocultar después de 5 segundos
+            setTimeout(() => {
+                mensajeDiv.textContent = '';
+                mensajeDiv.className = 'mensaje';
+            }, 5000);
+        }
+
+        // Inicialización
+        llenarListaEquipos();
+        // Llenar los selects inicialmente sin exclusiones
+        llenarSelect(selectCampeon);
+        llenarSelect(selectSubcampeon);
+        llenarSelect(selectTercero);
+        llenarSelect(selectCuarto);
+    </script>
+</body>
+</html>
