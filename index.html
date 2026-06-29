@@ -441,7 +441,8 @@
             btnGuardarPred.textContent = 'Guardando...';
 
             try {
-                await db.collection('predicciones').doc(nombre).set({
+                // Colección: "Predicción final"
+                await db.collection('Predicción final').doc(nombre).set({
                     nombre: nombre,
                     campeon: campeon,
                     subcampeon: subcampeon,
@@ -479,7 +480,8 @@
             btnGuardarOficial.textContent = 'Guardando...';
 
             try {
-                await db.collection('resultados').doc('oficial').set({
+                // Colección: "Resultados finales"
+                await db.collection('Resultados finales').doc('oficial').set({
                     campeon: campeon,
                     subcampeon: subcampeon,
                     tercero: tercero,
@@ -501,16 +503,16 @@
             contenidoClasificacion.innerHTML = '<p style="text-align:center;">Cargando puntuaciones...</p>';
 
             try {
-                // Obtener resultados oficiales
-                const oficialDoc = await db.collection('resultados').doc('oficial').get();
+                // Obtener resultados oficiales desde "Resultados finales"
+                const oficialDoc = await db.collection('Resultados finales').doc('oficial').get();
                 if (!oficialDoc.exists) {
                     contenidoClasificacion.innerHTML = '<p style="text-align:center; color:#f5a3a3;">Aún no hay resultados oficiales. El administrador debe guardarlos primero.</p>';
                     return;
                 }
                 const oficial = oficialDoc.data();
 
-                // Obtener todas las predicciones
-                const snapshot = await db.collection('predicciones').get();
+                // Obtener todas las predicciones desde "Predicción final"
+                const snapshot = await db.collection('Predicción final').get();
                 if (snapshot.empty) {
                     contenidoClasificacion.innerHTML = '<p style="text-align:center;">No hay predicciones aún.</p>';
                     return;
