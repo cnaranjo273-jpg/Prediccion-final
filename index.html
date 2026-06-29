@@ -34,20 +34,27 @@
         h1 {
             text-align: center;
             color: #f0a500;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             font-size: 2rem;
             letter-spacing: 1px;
             border-bottom: 2px solid #f0a500;
             padding-bottom: 10px;
         }
-        .seleccion {
+        h2 {
+            text-align: center;
+            color: #d4d4d4;
+            font-weight: 400;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+        .seccion {
             background-color: #0f3460;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        .seleccion h3 {
-            margin-bottom: 20px;
+        .seccion h3 {
+            margin-bottom: 15px;
             color: #f0a500;
             font-size: 1.2rem;
             text-align: center;
@@ -59,10 +66,12 @@
             flex-wrap: wrap;
         }
         .form-group label {
-            width: 160px;
+            width: 170px;
             font-weight: bold;
             color: #c0c0c0;
         }
+        .form-group input[type="text"],
+        .form-group input[type="password"],
         .form-group select {
             flex: 1;
             min-width: 200px;
@@ -73,8 +82,11 @@
             color: #e0e0e0;
             font-size: 0.95rem;
             outline: none;
+        }
+        .form-group select {
             cursor: pointer;
         }
+        .form-group input:focus,
         .form-group select:focus {
             border-color: #e94560;
             box-shadow: 0 0 8px rgba(233,69,96,0.4);
@@ -100,10 +112,37 @@
             background-color: #555;
             cursor: not-allowed;
         }
+        .btn-admin {
+            background-color: transparent;
+            border: 1px solid #f0a500;
+            color: #f0a500;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: auto;
+            margin: 10px auto 0;
+            display: block;
+            transition: background 0.3s;
+        }
+        .btn-admin:hover {
+            background-color: #f0a500;
+            color: #1a1a2e;
+        }
+        .admin-panel {
+            display: none;
+            margin-top: 20px;
+            border: 2px dashed #f0a500;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .admin-panel.visible {
+            display: block;
+        }
         .mensaje {
             text-align: center;
-            margin-top: 15px;
-            padding: 10px;
+            margin-top: 10px;
+            padding: 8px;
             border-radius: 5px;
             font-weight: 500;
         }
@@ -115,15 +154,26 @@
             background-color: #5c1a1a;
             color: #f5a3a3;
         }
+        .nota {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Predicción Final</h1>
+        <h2>Copa del Mundo 2026</h2>
 
-        <!-- Selección de los cuatro primeros lugares -->
-        <div class="seleccion">
-            <h3>Establecer los cuatro primeros lugares</h3>
+        <!-- SECCIÓN PREDICCIÓN PERSONAL -->
+        <div class="seccion">
+            <h3>Tu predicción</h3>
+            <div class="form-group">
+                <label for="nombre">Tu nombre:</label>
+                <input type="text" id="nombre" placeholder="Ej: Juan Pérez" maxlength="50">
+            </div>
             <div class="form-group">
                 <label for="campeon">1er lugar (Campeón):</label>
                 <select id="campeon"></select>
@@ -140,9 +190,47 @@
                 <label for="cuarto">4to lugar:</label>
                 <select id="cuarto"></select>
             </div>
-            <button id="guardar-btn">Guardar resultados en Firebase</button>
-            <div id="mensaje" class="mensaje"></div>
+            <button id="guardar-prediccion-btn">Guardar mi predicción</button>
+            <div id="mensaje-prediccion" class="mensaje"></div>
         </div>
+
+        <!-- BOTÓN PARA MOSTRAR PANEL DE ADMIN -->
+        <button class="btn-admin" id="btn-mostrar-admin">Acceso Administrador</button>
+
+        <!-- PANEL DE ADMINISTRADOR (OCULTO) -->
+        <div id="admin-panel" class="admin-panel">
+            <div class="form-group">
+                <label for="admin-pass">Contraseña admin:</label>
+                <input type="password" id="admin-pass" placeholder="Ingrese contraseña">
+            </div>
+            <button id="btn-login-admin">Ingresar como administrador</button>
+            <div id="mensaje-admin-login" class="mensaje"></div>
+
+            <!-- Contenido del admin (aparece tras login exitoso) -->
+            <div id="admin-contenido" style="display: none;">
+                <hr style="border-color: #f0a500; margin: 15px 0;">
+                <h3>Resultados Oficiales (Admin)</h3>
+                <div class="form-group">
+                    <label for="oficial-campeon">1er lugar:</label>
+                    <select id="oficial-campeon"></select>
+                </div>
+                <div class="form-group">
+                    <label for="oficial-subcampeon">2do lugar:</label>
+                    <select id="oficial-subcampeon"></select>
+                </div>
+                <div class="form-group">
+                    <label for="oficial-tercero">3er lugar:</label>
+                    <select id="oficial-tercero"></select>
+                </div>
+                <div class="form-group">
+                    <label for="oficial-cuarto">4to lugar:</label>
+                    <select id="oficial-cuarto"></select>
+                </div>
+                <button id="guardar-oficial-btn">Guardar resultados oficiales</button>
+                <div id="mensaje-oficial" class="mensaje"></div>
+            </div>
+        </div>
+        <div class="nota">Las predicciones se guardan con tu nombre. El administrador define los resultados finales para comparar.</div>
     </div>
 
     <script>
@@ -157,7 +245,6 @@
             measurementId: "G-2L7YYNQ8E2"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -171,15 +258,34 @@
             "Australia", "Egipto", "Suiza", "Argelia", "Colombia", "Ghana"
         ];
 
-        // Referencias al DOM
+        // --- REFERENCIAS AL DOM ---
+        // Predicción personal
+        const inputNombre = document.getElementById('nombre');
         const selectCampeon = document.getElementById('campeon');
         const selectSubcampeon = document.getElementById('subcampeon');
         const selectTercero = document.getElementById('tercero');
         const selectCuarto = document.getElementById('cuarto');
-        const btnGuardar = document.getElementById('guardar-btn');
-        const mensajeDiv = document.getElementById('mensaje');
+        const btnGuardarPred = document.getElementById('guardar-prediccion-btn');
+        const mensajePred = document.getElementById('mensaje-prediccion');
 
-        // Función para llenar un select excluyendo equipos ya elegidos en otros
+        // Admin
+        const btnMostrarAdmin = document.getElementById('btn-mostrar-admin');
+        const adminPanel = document.getElementById('admin-panel');
+        const inputAdminPass = document.getElementById('admin-pass');
+        const btnLoginAdmin = document.getElementById('btn-login-admin');
+        const mensajeAdminLogin = document.getElementById('mensaje-admin-login');
+        const adminContenido = document.getElementById('admin-contenido');
+        const selectOficialCampeon = document.getElementById('oficial-campeon');
+        const selectOficialSubcampeon = document.getElementById('oficial-subcampeon');
+        const selectOficialTercero = document.getElementById('oficial-tercero');
+        const selectOficialCuarto = document.getElementById('oficial-cuarto');
+        const btnGuardarOficial = document.getElementById('guardar-oficial-btn');
+        const mensajeOficial = document.getElementById('mensaje-oficial');
+
+        // Contraseña de administrador (simple demo)
+        const ADMIN_PASSWORD = "admin2026";
+
+        // --- FUNCIONES AUXILIARES PARA SELECTS ---
         function llenarSelect(selectElement, equiposExcluir = []) {
             const valorActual = selectElement.value;
             selectElement.innerHTML = '<option value="">-- Seleccionar --</option>';
@@ -188,86 +294,190 @@
                     const option = document.createElement('option');
                     option.value = equipo;
                     option.textContent = equipo;
-                    if (equipo === valorActual) {
-                        option.selected = true;
-                    }
+                    if (equipo === valorActual) option.selected = true;
                     selectElement.appendChild(option);
                 }
             });
         }
 
-        function actualizarTodosLosSelects() {
+        // Actualizar selects de predicción personal
+        function actualizarSelectsPrediccion() {
             const campeon = selectCampeon.value;
             const subcampeon = selectSubcampeon.value;
             const tercero = selectTercero.value;
             const cuarto = selectCuarto.value;
-
             llenarSelect(selectCampeon, [subcampeon, tercero, cuarto].filter(Boolean));
             llenarSelect(selectSubcampeon, [campeon, tercero, cuarto].filter(Boolean));
             llenarSelect(selectTercero, [campeon, subcampeon, cuarto].filter(Boolean));
             llenarSelect(selectCuarto, [campeon, subcampeon, tercero].filter(Boolean));
         }
 
-        // Eventos de cambio
-        selectCampeon.addEventListener('change', actualizarTodosLosSelects);
-        selectSubcampeon.addEventListener('change', actualizarTodosLosSelects);
-        selectTercero.addEventListener('change', actualizarTodosLosSelects);
-        selectCuarto.addEventListener('change', actualizarTodosLosSelects);
+        // Actualizar selects de admin (independientes)
+        function actualizarSelectsAdmin() {
+            const campeon = selectOficialCampeon.value;
+            const subcampeon = selectOficialSubcampeon.value;
+            const tercero = selectOficialTercero.value;
+            const cuarto = selectOficialCuarto.value;
+            llenarSelect(selectOficialCampeon, [subcampeon, tercero, cuarto].filter(Boolean));
+            llenarSelect(selectOficialSubcampeon, [campeon, tercero, cuarto].filter(Boolean));
+            llenarSelect(selectOficialTercero, [campeon, subcampeon, cuarto].filter(Boolean));
+            llenarSelect(selectOficialCuarto, [campeon, subcampeon, tercero].filter(Boolean));
+        }
 
-        // Guardar en Firestore
-        btnGuardar.addEventListener('click', async () => {
+        // Eventos para selects predicción
+        selectCampeon.addEventListener('change', actualizarSelectsPrediccion);
+        selectSubcampeon.addEventListener('change', actualizarSelectsPrediccion);
+        selectTercero.addEventListener('change', actualizarSelectsPrediccion);
+        selectCuarto.addEventListener('change', actualizarSelectsPrediccion);
+
+        // Eventos para selects admin
+        selectOficialCampeon.addEventListener('change', actualizarSelectsAdmin);
+        selectOficialSubcampeon.addEventListener('change', actualizarSelectsAdmin);
+        selectOficialTercero.addEventListener('change', actualizarSelectsAdmin);
+        selectOficialCuarto.addEventListener('change', actualizarSelectsAdmin);
+
+        // --- MOSTRAR/OCULTAR PANEL ADMIN ---
+        btnMostrarAdmin.addEventListener('click', () => {
+            if (adminPanel.classList.contains('visible')) {
+                adminPanel.classList.remove('visible');
+                btnMostrarAdmin.textContent = 'Acceso Administrador';
+                // Limpiar campos de admin al ocultar
+                inputAdminPass.value = '';
+                adminContenido.style.display = 'none';
+            } else {
+                adminPanel.classList.add('visible');
+                btnMostrarAdmin.textContent = 'Ocultar Administrador';
+            }
+        });
+
+        // --- LOGIN ADMIN ---
+        btnLoginAdmin.addEventListener('click', () => {
+            const pass = inputAdminPass.value.trim();
+            if (pass === ADMIN_PASSWORD) {
+                adminContenido.style.display = 'block';
+                mensajeAdminLogin.textContent = 'Acceso concedido.';
+                mensajeAdminLogin.className = 'mensaje exito';
+                // Inicializar selects oficiales si están vacíos
+                if (selectOficialCampeon.options.length === 0) {
+                    llenarSelect(selectOficialCampeon);
+                    llenarSelect(selectOficialSubcampeon);
+                    llenarSelect(selectOficialTercero);
+                    llenarSelect(selectOficialCuarto);
+                }
+            } else {
+                adminContenido.style.display = 'none';
+                mensajeAdminLogin.textContent = 'Contraseña incorrecta.';
+                mensajeAdminLogin.className = 'mensaje error';
+            }
+        });
+
+        // --- GUARDAR PREDICCIÓN PERSONAL ---
+        btnGuardarPred.addEventListener('click', async () => {
+            const nombre = inputNombre.value.trim();
             const campeon = selectCampeon.value;
             const subcampeon = selectSubcampeon.value;
             const tercero = selectTercero.value;
             const cuarto = selectCuarto.value;
 
+            // Validaciones
+            if (!nombre) {
+                mostrarMensajePred('Por favor ingresa tu nombre.', 'error');
+                return;
+            }
             if (!campeon || !subcampeon || !tercero || !cuarto) {
-                mostrarMensaje('Debe seleccionar los cuatro lugares.', 'error');
+                mostrarMensajePred('Selecciona los cuatro lugares.', 'error');
+                return;
+            }
+            if (new Set([campeon, subcampeon, tercero, cuarto]).size !== 4) {
+                mostrarMensajePred('Los equipos deben ser diferentes.', 'error');
                 return;
             }
 
-            const seleccionados = [campeon, subcampeon, tercero, cuarto];
-            if (new Set(seleccionados).size !== 4) {
-                mostrarMensaje('Los equipos seleccionados deben ser diferentes entre sí.', 'error');
-                return;
-            }
-
-            btnGuardar.disabled = true;
-            btnGuardar.textContent = 'Guardando...';
+            btnGuardarPred.disabled = true;
+            btnGuardarPred.textContent = 'Guardando...';
 
             try {
-                await db.collection('resultados').doc('final2026').set({
+                // Guardar en colección "predicciones" con documento = nombre (reemplaza si ya existe)
+                await db.collection('predicciones').doc(nombre).set({
+                    nombre: nombre,
                     campeon: campeon,
                     subcampeon: subcampeon,
                     tercero: tercero,
                     cuarto: cuarto,
-                    equipos: equipos,
                     fecha: new Date().toISOString()
                 });
-                mostrarMensaje('Resultados guardados correctamente en Firebase.', 'exito');
+                mostrarMensajePred('¡Predicción guardada con éxito!', 'exito');
             } catch (error) {
-                console.error('Error al guardar:', error);
-                mostrarMensaje('Error al guardar: ' + error.message, 'error');
+                console.error(error);
+                mostrarMensajePred('Error al guardar: ' + error.message, 'error');
             } finally {
-                btnGuardar.disabled = false;
-                btnGuardar.textContent = 'Guardar resultados en Firebase';
+                btnGuardarPred.disabled = false;
+                btnGuardarPred.textContent = 'Guardar mi predicción';
             }
         });
 
-        function mostrarMensaje(texto, tipo) {
-            mensajeDiv.textContent = texto;
-            mensajeDiv.className = 'mensaje ' + tipo;
+        // --- GUARDAR RESULTADOS OFICIALES (ADMIN) ---
+        btnGuardarOficial.addEventListener('click', async () => {
+            const campeon = selectOficialCampeon.value;
+            const subcampeon = selectOficialSubcampeon.value;
+            const tercero = selectOficialTercero.value;
+            const cuarto = selectOficialCuarto.value;
+
+            if (!campeon || !subcampeon || !tercero || !cuarto) {
+                mostrarMensajeOficial('Completa los cuatro lugares oficiales.', 'error');
+                return;
+            }
+            if (new Set([campeon, subcampeon, tercero, cuarto]).size !== 4) {
+                mostrarMensajeOficial('Los equipos deben ser diferentes.', 'error');
+                return;
+            }
+
+            btnGuardarOficial.disabled = true;
+            btnGuardarOficial.textContent = 'Guardando...';
+
+            try {
+                await db.collection('resultados').doc('oficial').set({
+                    campeon: campeon,
+                    subcampeon: subcampeon,
+                    tercero: tercero,
+                    cuarto: cuarto,
+                    fecha: new Date().toISOString()
+                });
+                mostrarMensajeOficial('Resultados oficiales actualizados.', 'exito');
+            } catch (error) {
+                console.error(error);
+                mostrarMensajeOficial('Error: ' + error.message, 'error');
+            } finally {
+                btnGuardarOficial.disabled = false;
+                btnGuardarOficial.textContent = 'Guardar resultados oficiales';
+            }
+        });
+
+        // --- MENSAJES TEMPORALES ---
+        function mostrarMensajePred(texto, tipo) {
+            mensajePred.textContent = texto;
+            mensajePred.className = 'mensaje ' + tipo;
             setTimeout(() => {
-                mensajeDiv.textContent = '';
-                mensajeDiv.className = 'mensaje';
+                mensajePred.textContent = '';
+                mensajePred.className = 'mensaje';
             }, 5000);
         }
 
-        // Inicializar todos los selects
+        function mostrarMensajeOficial(texto, tipo) {
+            mensajeOficial.textContent = texto;
+            mensajeOficial.className = 'mensaje ' + tipo;
+            setTimeout(() => {
+                mensajeOficial.textContent = '';
+                mensajeOficial.className = 'mensaje';
+            }, 5000);
+        }
+
+        // --- INICIALIZAR SELECTS ---
         llenarSelect(selectCampeon);
         llenarSelect(selectSubcampeon);
         llenarSelect(selectTercero);
         llenarSelect(selectCuarto);
+        // Los selects oficiales se llenan al mostrar el panel de admin tras login.
     </script>
 </body>
 </html>
