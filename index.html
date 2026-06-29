@@ -27,7 +27,7 @@
             background-color: #16213e;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             padding: 30px;
         }
@@ -112,7 +112,7 @@
             background-color: #555;
             cursor: not-allowed;
         }
-        .btn-admin {
+        .btn-secundario {
             background-color: transparent;
             border: 1px solid #f0a500;
             color: #f0a500;
@@ -125,7 +125,7 @@
             display: block;
             transition: background 0.3s;
         }
-        .btn-admin:hover {
+        .btn-secundario:hover {
             background-color: #f0a500;
             color: #1a1a2e;
         }
@@ -159,6 +159,28 @@
             color: #aaa;
             text-align: center;
             margin-top: 5px;
+        }
+        /* Estilos para la tabla de clasificación */
+        .tabla-clasificacion {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background-color: #1a1a2e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tabla-clasificacion th, .tabla-clasificacion td {
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 1px solid #0f3460;
+        }
+        .tabla-clasificacion th {
+            background-color: #0f3460;
+            color: #f0a500;
+            font-weight: bold;
+        }
+        .tabla-clasificacion tr:hover td {
+            background-color: #16213e;
         }
     </style>
 </head>
@@ -194,8 +216,19 @@
             <div id="mensaje-prediccion" class="mensaje"></div>
         </div>
 
-        <!-- BOTÓN PARA MOSTRAR PANEL DE ADMIN -->
-        <button class="btn-admin" id="btn-mostrar-admin">Acceso Administrador</button>
+        <!-- BOTONES DE ACCIONES GENERALES -->
+        <button class="btn-secundario" id="btn-ver-clasificacion">Ver clasificación</button>
+        <button class="btn-secundario" id="btn-mostrar-admin">Acceso Administrador</button>
+
+        <!-- CLASIFICACIÓN (OCULTA POR DEFECTO) -->
+        <div id="clasificacion-panel" style="display: none; margin-top: 20px;">
+            <div class="seccion">
+                <h3>Clasificación (3 puntos por acierto exacto)</h3>
+                <div id="contenido-clasificacion">
+                    <p style="text-align:center;">Cargando...</p>
+                </div>
+            </div>
+        </div>
 
         <!-- PANEL DE ADMINISTRADOR (OCULTO) -->
         <div id="admin-panel" class="admin-panel">
@@ -230,7 +263,7 @@
                 <div id="mensaje-oficial" class="mensaje"></div>
             </div>
         </div>
-        <div class="nota">Las predicciones se guardan con tu nombre. El administrador define los resultados finales para comparar.</div>
+        <div class="nota">Las predicciones se guardan con tu nombre. El administrador define los resultados finales para calcular los puntos.</div>
     </div>
 
     <script>
@@ -248,7 +281,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- LISTA DE LOS 32 PAÍSES (usada solo en los select) ---
+        // --- LISTA DE LOS 32 PAÍSES ---
         const equipos = [
             "Alemania", "Paraguay", "Francia", "Suecia", "Sudáfrica", "Canadá",
             "Países Bajos", "Marruecos", "Portugal", "Croacia", "España", "Austria",
@@ -268,6 +301,11 @@
         const btnGuardarPred = document.getElementById('guardar-prediccion-btn');
         const mensajePred = document.getElementById('mensaje-prediccion');
 
+        // Clasificación
+        const btnVerClasificacion = document.getElementById('btn-ver-clasificacion');
+        const clasificacionPanel = document.getElementById('clasificacion-panel');
+        const contenidoClasificacion = document.getElementById('contenido-clasificacion');
+
         // Admin
         const btnMostrarAdmin = document.getElementById('btn-mostrar-admin');
         const adminPanel = document.getElementById('admin-panel');
@@ -282,10 +320,9 @@
         const btnGuardarOficial = document.getElementById('guardar-oficial-btn');
         const mensajeOficial = document.getElementById('mensaje-oficial');
 
-        // Contraseña de administrador (simple demo)
         const ADMIN_PASSWORD = "Carlos1234";
 
-        // --- FUNCIONES AUXILIARES PARA SELECTS ---
+        // --- FUNCIONES SELECTS ---
         function llenarSelect(selectElement, equiposExcluir = []) {
             const valorActual = selectElement.value;
             selectElement.innerHTML = '<option value="">-- Seleccionar --</option>';
@@ -300,7 +337,6 @@
             });
         }
 
-        // Actualizar selects de predicción personal
         function actualizarSelectsPrediccion() {
             const campeon = selectCampeon.value;
             const subcampeon = selectSubcampeon.value;
@@ -312,7 +348,6 @@
             llenarSelect(selectCuarto, [campeon, subcampeon, tercero].filter(Boolean));
         }
 
-        // Actualizar selects de admin (independientes)
         function actualizarSelectsAdmin() {
             const campeon = selectOficialCampeon.value;
             const subcampeon = selectOficialSubcampeon.value;
@@ -324,29 +359,40 @@
             llenarSelect(selectOficialCuarto, [campeon, subcampeon, tercero].filter(Boolean));
         }
 
-        // Eventos para selects predicción
         selectCampeon.addEventListener('change', actualizarSelectsPrediccion);
         selectSubcampeon.addEventListener('change', actualizarSelectsPrediccion);
         selectTercero.addEventListener('change', actualizarSelectsPrediccion);
         selectCuarto.addEventListener('change', actualizarSelectsPrediccion);
 
-        // Eventos para selects admin
         selectOficialCampeon.addEventListener('change', actualizarSelectsAdmin);
         selectOficialSubcampeon.addEventListener('change', actualizarSelectsAdmin);
         selectOficialTercero.addEventListener('change', actualizarSelectsAdmin);
         selectOficialCuarto.addEventListener('change', actualizarSelectsAdmin);
 
-        // --- MOSTRAR/OCULTAR PANEL ADMIN ---
+        // --- MOSTRAR/OCULTAR PANELES ---
         btnMostrarAdmin.addEventListener('click', () => {
             if (adminPanel.classList.contains('visible')) {
                 adminPanel.classList.remove('visible');
                 btnMostrarAdmin.textContent = 'Acceso Administrador';
-                // Limpiar campos de admin al ocultar
                 inputAdminPass.value = '';
                 adminContenido.style.display = 'none';
             } else {
                 adminPanel.classList.add('visible');
                 btnMostrarAdmin.textContent = 'Ocultar Administrador';
+                // Cerrar clasificación si está abierta
+                clasificacionPanel.style.display = 'none';
+                btnVerClasificacion.textContent = 'Ver clasificación';
+            }
+        });
+
+        btnVerClasificacion.addEventListener('click', () => {
+            if (clasificacionPanel.style.display === 'block') {
+                clasificacionPanel.style.display = 'none';
+                btnVerClasificacion.textContent = 'Ver clasificación';
+            } else {
+                clasificacionPanel.style.display = 'block';
+                btnVerClasificacion.textContent = 'Ocultar clasificación';
+                cargarClasificacion();
             }
         });
 
@@ -357,7 +403,6 @@
                 adminContenido.style.display = 'block';
                 mensajeAdminLogin.textContent = 'Acceso concedido.';
                 mensajeAdminLogin.className = 'mensaje exito';
-                // Inicializar selects oficiales si están vacíos
                 if (selectOficialCampeon.options.length === 0) {
                     llenarSelect(selectOficialCampeon);
                     llenarSelect(selectOficialSubcampeon);
@@ -371,7 +416,7 @@
             }
         });
 
-        // --- GUARDAR PREDICCIÓN PERSONAL ---
+        // --- GUARDAR PREDICCIÓN ---
         btnGuardarPred.addEventListener('click', async () => {
             const nombre = inputNombre.value.trim();
             const campeon = selectCampeon.value;
@@ -379,7 +424,6 @@
             const tercero = selectTercero.value;
             const cuarto = selectCuarto.value;
 
-            // Validaciones
             if (!nombre) {
                 mostrarMensajePred('Por favor ingresa tu nombre.', 'error');
                 return;
@@ -397,7 +441,6 @@
             btnGuardarPred.textContent = 'Guardando...';
 
             try {
-                // Guardar en colección "predicciones" con documento = nombre (reemplaza si ya existe)
                 await db.collection('predicciones').doc(nombre).set({
                     nombre: nombre,
                     campeon: campeon,
@@ -416,7 +459,7 @@
             }
         });
 
-        // --- GUARDAR RESULTADOS OFICIALES (ADMIN) ---
+        // --- GUARDAR RESULTADOS OFICIALES ---
         btnGuardarOficial.addEventListener('click', async () => {
             const campeon = selectOficialCampeon.value;
             const subcampeon = selectOficialSubcampeon.value;
@@ -453,6 +496,55 @@
             }
         });
 
+        // --- CARGAR CLASIFICACIÓN ---
+        async function cargarClasificacion() {
+            contenidoClasificacion.innerHTML = '<p style="text-align:center;">Cargando puntuaciones...</p>';
+
+            try {
+                // Obtener resultados oficiales
+                const oficialDoc = await db.collection('resultados').doc('oficial').get();
+                if (!oficialDoc.exists) {
+                    contenidoClasificacion.innerHTML = '<p style="text-align:center; color:#f5a3a3;">Aún no hay resultados oficiales. El administrador debe guardarlos primero.</p>';
+                    return;
+                }
+                const oficial = oficialDoc.data();
+
+                // Obtener todas las predicciones
+                const snapshot = await db.collection('predicciones').get();
+                if (snapshot.empty) {
+                    contenidoClasificacion.innerHTML = '<p style="text-align:center;">No hay predicciones aún.</p>';
+                    return;
+                }
+
+                // Calcular puntos para cada persona
+                const clasificacion = [];
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    let puntos = 0;
+                    if (p.campeon === oficial.campeon) puntos += 3;
+                    if (p.subcampeon === oficial.subcampeon) puntos += 3;
+                    if (p.tercero === oficial.tercero) puntos += 3;
+                    if (p.cuarto === oficial.cuarto) puntos += 3;
+                    clasificacion.push({ nombre: p.nombre, puntos: puntos });
+                });
+
+                // Ordenar por puntos descendente
+                clasificacion.sort((a, b) => b.puntos - a.puntos);
+
+                // Construir tabla HTML
+                let html = '<table class="tabla-clasificacion"><thead><tr><th>Posición</th><th>Nombre</th><th>Puntos</th></tr></thead><tbody>';
+                clasificacion.forEach((item, index) => {
+                    html += `<tr><td>${index + 1}</td><td>${item.nombre}</td><td>${item.puntos}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                contenidoClasificacion.innerHTML = html;
+
+            } catch (error) {
+                console.error(error);
+                contenidoClasificacion.innerHTML = '<p style="color:#f5a3a3;">Error al cargar clasificación.</p>';
+            }
+        }
+
         // --- MENSAJES TEMPORALES ---
         function mostrarMensajePred(texto, tipo) {
             mensajePred.textContent = texto;
@@ -472,12 +564,11 @@
             }, 5000);
         }
 
-        // --- INICIALIZAR SELECTS ---
+        // --- INICIALIZAR ---
         llenarSelect(selectCampeon);
         llenarSelect(selectSubcampeon);
         llenarSelect(selectTercero);
         llenarSelect(selectCuarto);
-        // Los selects oficiales se llenan al mostrar el panel de admin tras login.
     </script>
 </body>
 </html>
