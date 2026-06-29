@@ -27,36 +27,18 @@
             background-color: #16213e;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            max-width: 800px;
+            max-width: 600px;
             width: 100%;
             padding: 30px;
         }
         h1 {
             text-align: center;
             color: #f0a500;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             font-size: 2rem;
             letter-spacing: 1px;
             border-bottom: 2px solid #f0a500;
             padding-bottom: 10px;
-        }
-        .equipos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 8px;
-            margin-bottom: 35px;
-            background-color: #0f3460;
-            padding: 15px;
-            border-radius: 8px;
-            list-style: none;
-        }
-        .equipos-grid li {
-            background-color: #1a1a2e;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            text-align: center;
-            border-left: 4px solid #f0a500;
         }
         .seleccion {
             background-color: #0f3460;
@@ -65,9 +47,10 @@
             margin-bottom: 20px;
         }
         .seleccion h3 {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             color: #f0a500;
             font-size: 1.2rem;
+            text-align: center;
         }
         .form-group {
             margin-bottom: 12px;
@@ -76,7 +59,7 @@
             flex-wrap: wrap;
         }
         .form-group label {
-            width: 140px;
+            width: 160px;
             font-weight: bold;
             color: #c0c0c0;
         }
@@ -107,7 +90,7 @@
             cursor: pointer;
             transition: background 0.3s ease;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
             letter-spacing: 0.5px;
         }
         button:hover {
@@ -137,11 +120,6 @@
 <body>
     <div class="container">
         <h1>Predicción Final</h1>
-
-        <!-- Lista de los 32 equipos proporcionados -->
-        <ul id="lista-equipos" class="equipos-grid">
-            <!-- Se llena dinámicamente con JavaScript -->
-        </ul>
 
         <!-- Selección de los cuatro primeros lugares -->
         <div class="seleccion">
@@ -183,7 +161,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- LISTA EXACTA DE LOS 32 PAÍSES PROPORCIONADOS ---
+        // --- LISTA DE LOS 32 PAÍSES (usada solo en los select) ---
         const equipos = [
             "Alemania", "Paraguay", "Francia", "Suecia", "Sudáfrica", "Canadá",
             "Países Bajos", "Marruecos", "Portugal", "Croacia", "España", "Austria",
@@ -193,8 +171,7 @@
             "Australia", "Egipto", "Suiza", "Argelia", "Colombia", "Ghana"
         ];
 
-        // Referencias a elementos del DOM
-        const listaEquipos = document.getElementById('lista-equipos');
+        // Referencias al DOM
         const selectCampeon = document.getElementById('campeon');
         const selectSubcampeon = document.getElementById('subcampeon');
         const selectTercero = document.getElementById('tercero');
@@ -202,21 +179,11 @@
         const btnGuardar = document.getElementById('guardar-btn');
         const mensajeDiv = document.getElementById('mensaje');
 
-        // --- FUNCIONES ---
-        function llenarListaEquipos() {
-            listaEquipos.innerHTML = '';
-            equipos.forEach(equipo => {
-                const li = document.createElement('li');
-                li.textContent = equipo;
-                listaEquipos.appendChild(li);
-            });
-        }
-
+        // Función para llenar un select excluyendo equipos ya elegidos en otros
         function llenarSelect(selectElement, equiposExcluir = []) {
             const valorActual = selectElement.value;
             selectElement.innerHTML = '<option value="">-- Seleccionar --</option>';
             equipos.forEach(equipo => {
-                // Si el equipo está excluido (ya seleccionado en otro select) y no es el valor actual, no lo mostramos
                 if (!equiposExcluir.includes(equipo) || equipo === valorActual) {
                     const option = document.createElement('option');
                     option.value = equipo;
@@ -241,7 +208,7 @@
             llenarSelect(selectCuarto, [campeon, subcampeon, tercero].filter(Boolean));
         }
 
-        // Eventos change en los selects
+        // Eventos de cambio
         selectCampeon.addEventListener('change', actualizarTodosLosSelects);
         selectSubcampeon.addEventListener('change', actualizarTodosLosSelects);
         selectTercero.addEventListener('change', actualizarTodosLosSelects);
@@ -296,8 +263,7 @@
             }, 5000);
         }
 
-        // Inicialización
-        llenarListaEquipos();
+        // Inicializar todos los selects
         llenarSelect(selectCampeon);
         llenarSelect(selectSubcampeon);
         llenarSelect(selectTercero);
